@@ -190,6 +190,6 @@ class AddPatientGUI(QWidget):
 
         Dynamically imports MainMenuGUI to avoid circular imports.
         """
-        from clinic.gui.main_menu_gui import MainMenuGUI  # Delayed import to prevent circular dependencies
+        from clinic.gui.main_menu_gui import MainMenuGUI # Delayed import to prevent circular dependencies
         if self.parent_widget:
             self.parent_widget.setCentralWidget(MainMenuGUI(self.controller, self.parent_widget))

@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from clinic.exception import NoCurrentPatientException, IllegalOperationException
 
+
 class AppointMainMenuGUI(QWidget):
     """
     GUI for managing a patient's appointment and medical records.
@@ -140,12 +141,35 @@ class AppointMainMenuGUI(QWidget):
     def open_add_note(self):
         """
         Opens a dialog to add a new note to the patient's record.
+        Displays ML classification prediction after adding the note.
         """
         try:
             note_text, ok = QInputDialog.getText(self, "Add Note", "Enter note text:")
             if ok and note_text.strip():
-                self.controller.create_note(note_text.strip())
-                QMessageBox.information(self, "Success", "Note successfully added to the patient's record!")
+                # Create the note and get the returned note object
+                new_note = self.controller.create_note(note_text.strip())
+
+                # Build success message with ML prediction
+                message = "Note successfully added to the patient's record!"
+
+                # Add ML prediction if available
+                if new_note and hasattr(new_note, 'ml_category') and new_note.ml_category:
+                    confidence_percent = new_note.ml_confidence * 100
+
+                    # Determine confidence level
+                    if new_note.ml_confidence >= 0.7:
+                        confidence_level = "High"
+                    elif new_note.ml_confidence >= 0.5:
+                        confidence_level = "Medium"
+                    else:
+                        confidence_level = "Low"
+
+                    message += f"\n\n ML Classification:\n"
+                    message += f"Category: {new_note.ml_category}\n"
+                    message += f"Confidence: {confidence_percent:.1f}% ({confidence_level})"
+
+                QMessageBox.information(self, "Success", message)
+
         except NoCurrentPatientException:
             QMessageBox.critical(self, "Error", "No current patient is selected.")
         except Exception as e:
@@ -165,7 +189,8 @@ class AppointMainMenuGUI(QWidget):
             notes = self.controller.retrieve_notes(search_text.strip())
             if notes:
                 from clinic.gui.retrieve_notes_window_gui import RetrieveNotesWindow  # Delayed import
-                self.parent_widget.setCentralWidget(RetrieveNotesWindow(self.controller, self.parent_widget, notes, search_text.strip()))
+                self.parent_widget.setCentralWidget(
+                    RetrieveNotesWindow(self.controller, self.parent_widget, notes, search_text.strip()))
             else:
                 QMessageBox.information(self, "No Results", "No notes found matching the search criteria.")
         except NoCurrentPatientException:

@@ -9,24 +9,24 @@ class NoteDAOPickle(NoteDAO):
     Manages the application's core operations, including user authentication,
     patient data handling, and note management.
     """
+
     def __init__(self, phn: str, autosave: bool):
         """
         Initializes a NoteDAOPickle instance for a specific patient.
-        
+
         Parameters:
         - phn (str): The patient's personal health number.
         - autosave (bool): Whether to enable automatic saving of notes.
         """
-        self.notes=[]
-        if not autosave:
-            self.autocounter = 1  # Initialize counter for assigning unique IDs to notes
-        
+        self.notes = []
+        self.autocounter = 1  # ALWAYS initialize autocounter
+
         self.autosave = autosave
         self.phn = phn
 
         # Set file path for storing notes
         self.filepath = f'clinic/records/{self.phn}.dat'
-        
+
         if self.autosave:
             # Automatically load notes if autosave is enabled
             self.load_notes()

@@ -57,13 +57,34 @@ class ListNotesWindow(QWidget):
     def format_notes(self):
         """
         Formats the notes for display in the QPlainTextEdit widget.
+        Includes ML classification predictions if available.
 
         Returns:
         - str: A formatted string where each note is separated by two newlines.
         """
-        return "\n\n".join(
-            [f"Note #{note.code}, from {note.timestamp}\n{note.text}" for note in self.notes]
-        )
+        formatted_notes = []
+
+        for note in self.notes:
+            # Basic note info
+            note_text = f"Note #{note.code}, from {note.timestamp}\n{note.text}"
+
+            # Add ML prediction if available
+            if hasattr(note, 'ml_category') and note.ml_category:
+                confidence_percent = note.ml_confidence * 100
+
+                # Determine confidence level
+                if note.ml_confidence >= 0.7:
+                    confidence_level = "High"
+                elif note.ml_confidence >= 0.5:
+                    confidence_level = "Medium"
+                else:
+                    confidence_level = "Low"
+
+                note_text += f"\n ML Classification: {note.ml_category} ({confidence_percent:.1f}% - {confidence_level})"
+
+            formatted_notes.append(note_text)
+
+        return "\n\n".join(formatted_notes)
 
     def return_to_menu(self):
         """

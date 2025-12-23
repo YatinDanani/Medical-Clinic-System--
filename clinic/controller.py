@@ -1,14 +1,21 @@
 import hashlib
 import json
-from  datetime import datetime
+from datetime import datetime
 from clinic.patient import Patient
 from clinic.patient_record import PatientRecord
 from clinic.note import Note
 from clinic.exception import (
-    DuplicateLoginException, IllegalAccessException, IllegalOperationException, InvalidLoginException, InvalidLogoutException,NoCurrentPatientException
+    DuplicateLoginException, IllegalAccessException, IllegalOperationException,
+    InvalidLoginException, InvalidLogoutException, NoCurrentPatientException
 )
 from clinic.dao import PatientDAOJSON
 from clinic.dao.note_dao_pickle import NoteDAOPickle
+
+# NEW: Import ML classifier
+from clinic.ml.note_classifier import NoteClassifier
+
+
+
 
 class Controller:
     """
@@ -16,19 +23,23 @@ class Controller:
     Handles login, logout, patient management, and note management within a session.
     """
 
-    def __init__(self,autosave = False):
+    def __init__(self, autosave=False):
         """
         Initializes the Controller instance with default settings.
 
         Parameters:
         - autosave (bool): Determines whether changes to patients are automatically saved.
         """
-        self.current_patient = None                  # Stores the currently selected patient in this session
-        self.username = None                         # Stores the username of the logged-in user
-        self.logged_in = False                       # Boolean indicating if a user is currently logged in
-        self.autosave = autosave        
-        self.patient_dao = PatientDAOJSON(autosave)  # Data Access Object for patient management
-        self.users = {}                              # Dictionary to store user credentials
+        self.current_patient = None
+        self.username = None
+        self.logged_in = False
+        self.autosave = autosave
+        self.patient_dao = PatientDAOJSON(autosave)
+        self.users = {}
+
+        # NEW: Initialize ML classifier
+        self.note_classifier = NoteClassifier()
+        self.note_classifier.load_model()  # Load pre-trained model
       
     def load_patients(self):
         """
@@ -306,22 +317,40 @@ class Controller:
 
     def create_note(self, text: str) -> 'Note':
         """
-        Creates a new note for the current patient.
+        Creates a new note for the current patient with ML classification.
 
         Parameters:
         - text (str): The content of the note to be created.
 
         Return Type:
-        - Note: The newly created Note instance.
+        - Note: The newly created Note instance with ML predictions.
         """
         if not self.logged_in:
             raise IllegalAccessException
-        
+
         if self.current_patient is None:
             raise NoCurrentPatientException
-        
-        return self.current_patient.create_note(text)
 
+        # Create the note
+        note = self.current_patient.create_note(text)
+
+        # Add ML prediction
+        try:
+            if hasattr(self, 'note_classifier') and self.note_classifier.is_trained:
+                category, confidence = self.note_classifier.predict(text)
+                note.ml_category = category
+                note.ml_confidence = confidence
+                print(f"✓ ML Prediction: {category} ({confidence * 100:.1f}%)")
+            else:
+                print(f"⚠️ ML Classifier not available or not trained")
+                note.ml_category = None
+                note.ml_confidence = 0.0
+        except Exception as e:
+            print(f"✗ ML Error: {e}")
+            note.ml_category = None
+            note.ml_confidence = 0.0
+
+        return note
     def search_note(self, code: int) -> 'Note':
         """
         Searches for a note by its code for the current patient.

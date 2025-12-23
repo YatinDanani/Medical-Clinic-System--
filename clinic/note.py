@@ -1,13 +1,14 @@
 from datetime import datetime
 
+
 class Note:
     """
-    Note class with unique code, detils and current timestamp
+    Note class with unique code, details and current timestamp
     """
 
-    def __init__(self, code: int, text: str, timestamp = None) -> None:
+    def __init__(self, code: int, text: str, timestamp=None) -> None:
         """
-        Initializes a Note instance with unique code, detils and current timestamp
+        Initializes a Note instance with unique code, details and current timestamp
 
         Parameters:
         - code (int): The unique identifier for the note.
@@ -18,7 +19,11 @@ class Note:
         """
         self.code = code
         self.text = text
-        self.timestamp = datetime.now()
+        self.timestamp = datetime.now() if timestamp is None else timestamp
+
+        # NEW: ML attributes
+        self.ml_category = None  # Predicted category (e.g., "Emergency")
+        self.ml_confidence = 0.0  # Confidence score (0.0 to 1.0)
 
     def update_details(self, text: str) -> None:
         """
@@ -44,9 +49,9 @@ class Note:
         - bool: Returns True if both notes have the same code and text, False otherwise.
         """
         return (
-            isinstance(other, Note) and self.code == other.code and self.text == other.text
+                isinstance(other, Note) and self.code == other.code and self.text == other.text
         )
-    
+
     def __str__(self) -> str:
         """
         Returns a string representation of the note
@@ -57,4 +62,10 @@ class Note:
         Return Type:
         - str: A string describing the note's code, text, and timestamp.
         """
-        return f'(Code: {self.code}, Details: {self.text}, Timestamp: {self.timestamp})'
+        base_str = f'(Code: {self.code}, Details: {self.text}, Timestamp: {self.timestamp})'
+
+        # Add ML info if available
+        if self.ml_category:
+            base_str += f' [ML: {self.ml_category} ({self.ml_confidence * 100:.0f}%)]'
+
+        return base_str

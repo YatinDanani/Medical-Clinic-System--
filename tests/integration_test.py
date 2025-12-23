@@ -41,7 +41,7 @@ class IntegrationTest(TestCase):
 		# otherwise it will reinstantiate the controller and reload every file
 		if self.controller.autosave:
 			self.controller = Controller(autosave=True)
-			self.controller.login("user", "123456")       
+			self.controller.login("user", "123456")
 
 	def test_login_logout(self):
 
